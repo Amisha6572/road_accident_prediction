@@ -1,0 +1,26 @@
+{
+  "regression": {
+    "rmse_train": 0.06712834999313783,
+    "rmse_test": 0.07209374019182638,
+    "mae_test": 0.05111727182871149,
+    "r2_train": 0.9058448471725498,
+    "r2_test": 0.8881077515474697,
+    "train_test_r2_gap": 0.01773709562508008,
+    "training_samples": 16000,
+    "test_samples": 4000
+  },
+  "classification": {
+    "accuracy": 0.76325,
+    "precision_weighted": 0.7715940508428688,
+    "recall_weighted": 0.76325,
+    "f1_weighted": 0.7481465428395575,
+    "training_samples": 16000,
+    "test_samples": 4000,
+    "num_classes": 3,
+    "classes": [
+      "Driving Behavior",
+      "Road Infrastructure",
+      "Weather-Related"
+    ]
+  }
+}
