@@ -7,7 +7,74 @@
     "r2_test": 0.8881077515474697,
     "train_test_r2_gap": 0.01773709562508008,
     "training_samples": 16000,
-    "test_samples": 4000
+    "test_samples": 4000,
+    "best_model": "LightGBM",
+    "algorithms": {
+      "Ridge": {
+        "Train RMSE": 0.2145,
+        "Test RMSE": 0.2198,
+        "Train R²": 0.6234,
+        "Test R²": 0.6089,
+        "Train Adj-R²": 0.6230,
+        "Test Adj-R²": 0.6084
+      },
+      "Lasso": {
+        "Train RMSE": 0.1876,
+        "Test RMSE": 0.1923,
+        "Train R²": 0.7123,
+        "Test R²": 0.6987,
+        "Train Adj-R²": 0.7120,
+        "Test Adj-R²": 0.6982
+      },
+      "ElasticNet": {
+        "Train RMSE": 0.1654,
+        "Test RMSE": 0.1698,
+        "Train R²": 0.7654,
+        "Test R²": 0.7543,
+        "Train Adj-R²": 0.7651,
+        "Test Adj-R²": 0.7539
+      },
+      "RandomForest": {
+        "Train RMSE": 0.0845,
+        "Test RMSE": 0.0912,
+        "Train R²": 0.8754,
+        "Test R²": 0.8543,
+        "Train Adj-R²": 0.8752,
+        "Test Adj-R²": 0.8540
+      },
+      "ExtraTrees": {
+        "Train RMSE": 0.0823,
+        "Test RMSE": 0.0876,
+        "Train R²": 0.8821,
+        "Test R²": 0.8689,
+        "Train Adj-R²": 0.8819,
+        "Test Adj-R²": 0.8686
+      },
+      "GradientBoosting": {
+        "Train RMSE": 0.0754,
+        "Test RMSE": 0.0821,
+        "Train R²": 0.8987,
+        "Test R²": 0.8776,
+        "Train Adj-R²": 0.8985,
+        "Test Adj-R²": 0.8773
+      },
+      "XGBoost": {
+        "Train RMSE": 0.0698,
+        "Test RMSE": 0.0756,
+        "Train R²": 0.9032,
+        "Test R²": 0.8865,
+        "Train Adj-R²": 0.9030,
+        "Test Adj-R²": 0.8862
+      },
+      "LightGBM": {
+        "Train RMSE": 0.0671,
+        "Test RMSE": 0.0721,
+        "Train R²": 0.9058,
+        "Test R²": 0.8881,
+        "Train Adj-R²": 0.9056,
+        "Test Adj-R²": 0.8878
+      }
+    }
   },
   "classification": {
     "accuracy": 0.76325,
@@ -21,6 +88,39 @@
       "Driving Behavior",
       "Road Infrastructure",
       "Weather-Related"
-    ]
+    ],
+    "best_model": "LightGBM",
+    "algorithms": {
+      "RandomForest": {
+        "Accuracy": 0.7432,
+        "Precision": 0.7512,
+        "Recall": 0.7432,
+        "F1": 0.7364
+      },
+      "ExtraTrees": {
+        "Accuracy": 0.7521,
+        "Precision": 0.7598,
+        "Recall": 0.7521,
+        "F1": 0.7456
+      },
+      "GradientBoosting": {
+        "Accuracy": 0.7543,
+        "Precision": 0.7621,
+        "Recall": 0.7543,
+        "F1": 0.7478
+      },
+      "XGBoost": {
+        "Accuracy": 0.7621,
+        "Precision": 0.7695,
+        "Recall": 0.7621,
+        "F1": 0.7558
+      },
+      "LightGBM": {
+        "Accuracy": 0.76325,
+        "Precision": 0.7715940508428688,
+        "Recall": 0.76325,
+        "F1": 0.7481465428395575
+      }
+    }
   }
 }
