@@ -432,7 +432,7 @@ with st.sidebar:
     st.markdown("<p style='font-size:0.78rem; font-weight:700; color:#7986cb; text-transform:uppercase; letter-spacing:1px; margin-bottom:0.4rem;'>Navigation</p>", unsafe_allow_html=True)
     page = st.radio(
         "Go to",
-        ["🏠 Dashboard", "🔮 Risk Assessment", "📂 Batch Prediction", "📊 Data Analytics", "ℹ️ About & Model"],
+        ["🏠 Dashboard", "🔮 Risk Assessment", "📂 Batch Prediction", "📊 Data Analytics", "📈 Model Performance", "ℹ️ About & Model"],
         label_visibility="collapsed"
     )
 
@@ -1519,7 +1519,343 @@ elif page == "📊 Data Analytics":
                                    "dataset_statistics.csv", "text/csv", use_container_width=True)
 
 # ═════════════════════════════════════════════════════════════
-# PAGE 5 — ABOUT & MODEL
+# PAGE 5 — MODEL PERFORMANCE
+# ═════════════════════════════════════════════════════════════
+elif page == "📈 Model Performance":
+    # Hero banner
+    st.markdown("""
+    <div style='background: linear-gradient(135deg, #0f0c29 0%, #1a237e 50%, #283593 100%);
+                border-radius: 16px; padding: 2.5rem 3rem; margin-bottom: 2rem;
+                box-shadow: 0 8px 32px rgba(26,35,126,0.35);'>
+        <div style='text-align:center;'>
+            <div style='font-size:3rem; margin-bottom:1rem;'>🤖</div>
+            <div style='font-size:1.8rem; font-weight:800; color:#ffffff; margin-bottom:0.5rem;'>
+                Model Performance Comparison
+            </div>
+            <div style='font-size:1rem; color:#9fa8da; margin-top:0.3rem; font-weight:500;'>
+                Regression & Classification Model Metrics
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    metrics = load_metrics()
+    
+    if metrics:
+        perf_tab1, perf_tab2 = st.tabs(["📉 Regression Model", "🎯 Classification Model"])
+        
+        # ── Regression Performance ───────────────────────────────────────────
+        with perf_tab1:
+            st.markdown("<div class='section-header'>Regression Model Metrics (Best Model)</div>", unsafe_allow_html=True)
+            reg_metrics = metrics.get('regression', {})
+            
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("R² Score (Test)", f"{reg_metrics.get('r2_test', 0):.4f}")
+            with col2:
+                st.metric("RMSE (Test)", f"{reg_metrics.get('rmse_test', 0):.4f}")
+            with col3:
+                st.metric("MAE (Test)", f"{reg_metrics.get('mae_test', 0):.4f}")
+            with col4:
+                st.metric("Best Model", reg_metrics.get('best_model', 'N/A'))
+            
+            # Training vs Test R² comparison
+            reg_r2_data = pd.DataFrame({
+                'Dataset': ['Training', 'Testing'],
+                'R² Score': [reg_metrics.get('r2_train', 0), reg_metrics.get('r2_test', 0)]
+            })
+            
+            col_r2_1, col_r2_2 = st.columns(2)
+            with col_r2_1:
+                fig_r2 = px.bar(reg_r2_data, x='Dataset', y='R² Score', 
+                               color='R² Score', color_continuous_scale='RdYlGn',
+                               range_color=[0, 1], title='R² Score: Train vs Test')
+                fig_r2.update_layout(height=350, paper_bgcolor='white', plot_bgcolor='#fafafa')
+                st.plotly_chart(fig_r2, use_container_width=True)
+            
+            with col_r2_2:
+                fig_error = go.Figure(data=[
+                    go.Bar(name='RMSE', x=['Train', 'Test'], 
+                          y=[reg_metrics.get('rmse_train', 0), reg_metrics.get('rmse_test', 0)],
+                          marker_color='#3949ab'),
+                    go.Bar(name='MAE', x=['Train', 'Test'], 
+                          y=[reg_metrics.get('mae_test', 0), reg_metrics.get('mae_test', 0)],
+                          marker_color='#ff7043')
+                ])
+                fig_error.update_layout(title='Error Metrics', height=350, barmode='group', 
+                                       paper_bgcolor='white', plot_bgcolor='#fafafa')
+                st.plotly_chart(fig_error, use_container_width=True)
+            
+            # Algorithm Comparison
+            st.markdown("<div class='section-header'>Algorithm Comparison</div>", unsafe_allow_html=True)
+            algo_dict = reg_metrics.get('algorithms', {})
+            if algo_dict:
+                algo_df = pd.DataFrame(algo_dict).T.reset_index().rename(columns={'index': 'Algorithm'})
+                
+                # Determine the best column to sort by (check multiple possible column names)
+                sort_column = None
+                for col in ['Test R²', 'test_r2', 'Test R2', 'r2_test', 'r2']:
+                    if col in algo_df.columns:
+                        sort_column = col
+                        break
+                
+                if sort_column:
+                    algo_df = algo_df.sort_values(sort_column, ascending=False)
+                
+                # Prepare formatting dict with only columns that exist
+                format_dict = {}
+                for col, fmt in {
+                    'Train RMSE': '{:.4f}',
+                    'Test RMSE': '{:.4f}',
+                    'Train R²': '{:.4f}',
+                    'Test R²': '{:.4f}',
+                    'Train Adj-R²': '{:.4f}',
+                    'Test Adj-R²': '{:.4f}',
+                    'train_rmse': '{:.4f}',
+                    'test_rmse': '{:.4f}',
+                    'train_r2': '{:.4f}',
+                    'test_r2': '{:.4f}',
+                }.items():
+                    if col in algo_df.columns:
+                        format_dict[col] = fmt
+                
+                # Display table with styling
+                styled_df = algo_df.style.format(format_dict)
+                
+                # Apply background gradient if Test R² column exists
+                for col in ['Test R²', 'test_r2', 'Test R2']:
+                    if col in algo_df.columns:
+                        styled_df = styled_df.background_gradient(subset=[col], cmap='RdYlGn')
+                        break
+                
+                st.dataframe(styled_df, use_container_width=True, hide_index=True)
+                
+                # Bar charts - check for required columns
+                chart_cols_r2 = None
+                chart_cols_rmse = None
+                
+                for train_col, test_col in [('Train R²', 'Test R²'), ('train_r2', 'test_r2')]:
+                    if train_col in algo_df.columns and test_col in algo_df.columns:
+                        chart_cols_r2 = [train_col, test_col]
+                        break
+                
+                for train_col, test_col in [('Train RMSE', 'Test RMSE'), ('train_rmse', 'test_rmse')]:
+                    if train_col in algo_df.columns and test_col in algo_df.columns:
+                        chart_cols_rmse = [train_col, test_col]
+                        break
+                
+                col_algo1, col_algo2 = st.columns(2)
+                
+                with col_algo1:
+                    if chart_cols_r2:
+                        fig_r2_algo = px.bar(algo_df, x='Algorithm', y=chart_cols_r2,
+                                            barmode='group', title='R² Comparison Across Algorithms',
+                                            color_discrete_map={chart_cols_r2[0]: '#3949ab', chart_cols_r2[1]: '#ff7043'})
+                        fig_r2_algo.update_layout(height=350, paper_bgcolor='white', plot_bgcolor='#fafafa')
+                        st.plotly_chart(fig_r2_algo, use_container_width=True)
+                    else:
+                        st.warning("R² metrics not available in algorithms data")
+                
+                with col_algo2:
+                    if chart_cols_rmse:
+                        fig_rmse_algo = px.bar(algo_df, x='Algorithm', y=chart_cols_rmse,
+                                              barmode='group', title='RMSE Comparison Across Algorithms',
+                                              color_discrete_map={chart_cols_rmse[0]: '#42a5f5', chart_cols_rmse[1]: '#ef9a9a'})
+                        fig_rmse_algo.update_layout(height=350, paper_bgcolor='white', plot_bgcolor='#fafafa')
+                        st.plotly_chart(fig_rmse_algo, use_container_width=True)
+                    else:
+                        st.warning("RMSE metrics not available in algorithms data")
+            
+            # Summary metrics
+            st.markdown("<div class='section-header'>Best Model Performance Summary</div>", unsafe_allow_html=True)
+            summary_data = {
+                'Metric': ['R² (Train)', 'R² (Test)', 'RMSE (Train)', 'RMSE (Test)', 'MAE (Test)', 'Train Samples', 'Test Samples'],
+                'Value': [
+                    f"{reg_metrics.get('r2_train', 0):.4f}",
+                    f"{reg_metrics.get('r2_test', 0):.4f}",
+                    f"{reg_metrics.get('rmse_train', 0):.4f}",
+                    f"{reg_metrics.get('rmse_test', 0):.4f}",
+                    f"{reg_metrics.get('mae_test', 0):.4f}",
+                    f"{reg_metrics.get('training_samples', 0):,}",
+                    f"{reg_metrics.get('test_samples', 0):,}"
+                ]
+            }
+            st.dataframe(pd.DataFrame(summary_data), use_container_width=True, hide_index=True)
+            
+            with st.expander("📋 Metric Interpretation"):
+                st.markdown("""
+                - **R² Score**: Proportion of variance explained (0-1, higher is better)
+                - **RMSE**: Root Mean Squared Error - average prediction error magnitude
+                - **MAE**: Mean Absolute Error - average absolute prediction difference
+                - **Adj-R²**: Adjusted R² accounting for number of features
+                - **Train-Test Gap**: Difference indicates model generalization
+                """)
+        
+        # ── Classification Performance ────────────────────────────────────────
+        with perf_tab2:
+            st.markdown("<div class='section-header'>Classification Model Metrics (Best Model)</div>", unsafe_allow_html=True)
+            cls_metrics = metrics.get('classification', {})
+            
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("Accuracy", f"{cls_metrics.get('accuracy', 0):.4f}")
+            with col2:
+                st.metric("Precision (Weighted)", f"{cls_metrics.get('precision_weighted', 0):.4f}")
+            with col3:
+                st.metric("Recall (Weighted)", f"{cls_metrics.get('recall_weighted', 0):.4f}")
+            with col4:
+                st.metric("Best Model", cls_metrics.get('best_model', 'N/A'))
+            
+            # Classification metrics comparison
+            cls_perf_data = pd.DataFrame({
+                'Metric': ['Accuracy', 'Precision', 'Recall', 'F1-Score'],
+                'Score': [
+                    cls_metrics.get('accuracy', 0),
+                    cls_metrics.get('precision_weighted', 0),
+                    cls_metrics.get('recall_weighted', 0),
+                    cls_metrics.get('f1_weighted', 0)
+                ]
+            })
+            
+            col_cls_1, col_cls_2 = st.columns(2)
+            with col_cls_1:
+                fig_cls = px.bar(cls_perf_data, x='Metric', y='Score',
+                                color='Score', color_continuous_scale='Blues',
+                                range_color=[0, 1], title='Best Model Metrics')
+                fig_cls.update_layout(height=350, paper_bgcolor='white', plot_bgcolor='#fafafa')
+                st.plotly_chart(fig_cls, use_container_width=True)
+            
+            with col_cls_2:
+                # Radar chart for multi-metric comparison
+                fig_radar = go.Figure(data=go.Scatterpolar(
+                    r=[
+                        cls_metrics.get('accuracy', 0),
+                        cls_metrics.get('precision_weighted', 0),
+                        cls_metrics.get('recall_weighted', 0),
+                        cls_metrics.get('f1_weighted', 0)
+                    ],
+                    theta=['Accuracy', 'Precision', 'Recall', 'F1-Score'],
+                    fill='toself',
+                    marker_color='rgba(57, 73, 171, 0.5)'
+                ))
+                fig_radar.update_layout(title='Multi-Metric Performance Profile', height=350)
+                st.plotly_chart(fig_radar, use_container_width=True)
+            
+            # Algorithm Comparison
+            st.markdown("<div class='section-header'>Algorithm Comparison</div>", unsafe_allow_html=True)
+            algo_dict = cls_metrics.get('algorithms', {})
+            if algo_dict:
+                algo_df = pd.DataFrame(algo_dict).T.reset_index().rename(columns={'index': 'Algorithm'})
+                
+                # Determine the best column to sort by (check multiple possible column names)
+                sort_column = None
+                for col in ['Accuracy', 'accuracy', 'Acc', 'acc']:
+                    if col in algo_df.columns:
+                        sort_column = col
+                        break
+                
+                if sort_column:
+                    algo_df = algo_df.sort_values(sort_column, ascending=False)
+                
+                # Prepare formatting dict with only columns that exist
+                format_dict = {}
+                for col, fmt in {
+                    'Accuracy': '{:.4f}',
+                    'Precision': '{:.4f}',
+                    'Recall': '{:.4f}',
+                    'F1': '{:.4f}',
+                    'accuracy': '{:.4f}',
+                    'precision': '{:.4f}',
+                    'recall': '{:.4f}',
+                    'f1': '{:.4f}',
+                }.items():
+                    if col in algo_df.columns:
+                        format_dict[col] = fmt
+                
+                # Display table with styling
+                styled_df = algo_df.style.format(format_dict)
+                
+                # Apply background gradient if Accuracy column exists
+                for col in ['Accuracy', 'accuracy', 'Acc']:
+                    if col in algo_df.columns:
+                        styled_df = styled_df.background_gradient(subset=[col], cmap='RdYlGn')
+                        break
+                
+                st.dataframe(styled_df, use_container_width=True, hide_index=True)
+                
+                # Bar charts - check for required columns
+                acc_col = None
+                for col in ['Accuracy', 'accuracy', 'Acc']:
+                    if col in algo_df.columns:
+                        acc_col = col
+                        break
+                
+                perf_cols = []
+                for col in ['Precision', 'Recall', 'F1']:
+                    if col in algo_df.columns:
+                        perf_cols.append(col)
+                
+                col_algo1, col_algo2 = st.columns(2)
+                with col_algo1:
+                    if acc_col:
+                        fig_acc_algo = px.bar(algo_df, x='Algorithm', y=[acc_col],
+                                             title='Accuracy Comparison Across Algorithms',
+                                             color=acc_col, color_continuous_scale='Blues')
+                        fig_acc_algo.update_layout(height=350, paper_bgcolor='white', plot_bgcolor='#fafafa')
+                        st.plotly_chart(fig_acc_algo, use_container_width=True)
+                    else:
+                        st.warning("Accuracy metrics not available in algorithms data")
+                
+                with col_algo2:
+                    if perf_cols:
+                        fig_f1_algo = px.bar(algo_df, x='Algorithm', y=perf_cols,
+                                            barmode='group', title='Precision, Recall & F1 Comparison',
+                                            color_discrete_map={perf_cols[i]: c for i, c in enumerate(['#42a5f5', '#66bb6a', '#ff7043'])})
+                        fig_f1_algo.update_layout(height=350, paper_bgcolor='white', plot_bgcolor='#fafafa')
+                        st.plotly_chart(fig_f1_algo, use_container_width=True)
+                    else:
+                        st.warning("Classification metrics (Precision, Recall, F1) not available in algorithms data")
+            
+            # Class information
+            st.markdown("<div class='section-header'>Classification Classes</div>", unsafe_allow_html=True)
+            classes = cls_metrics.get('classes', [])
+            num_classes = cls_metrics.get('num_classes', 0)
+            
+            class_info = {
+                'Class': classes,
+                'Category ID': list(range(num_classes))
+            }
+            st.dataframe(pd.DataFrame(class_info), use_container_width=True, hide_index=True)
+            
+            # Summary metrics
+            st.markdown("<div class='section-header'>Best Model Performance Summary</div>", unsafe_allow_html=True)
+            summary_data = {
+                'Metric': ['Accuracy', 'Precision (Weighted)', 'Recall (Weighted)', 'F1-Score (Weighted)', 'Number of Classes', 'Train Samples', 'Test Samples'],
+                'Value': [
+                    f"{cls_metrics.get('accuracy', 0):.4f}",
+                    f"{cls_metrics.get('precision_weighted', 0):.4f}",
+                    f"{cls_metrics.get('recall_weighted', 0):.4f}",
+                    f"{cls_metrics.get('f1_weighted', 0):.4f}",
+                    f"{cls_metrics.get('num_classes', 0)}",
+                    f"{cls_metrics.get('training_samples', 0):,}",
+                    f"{cls_metrics.get('test_samples', 0):,}"
+                ]
+            }
+            st.dataframe(pd.DataFrame(summary_data), use_container_width=True, hide_index=True)
+            
+            with st.expander("📋 Metric Interpretation"):
+                st.markdown("""
+                - **Accuracy**: Percentage of correct predictions across all classes
+                - **Precision**: True positives / (True positives + False positives)
+                - **Recall**: True positives / (True positives + False negatives)
+                - **F1-Score**: Harmonic mean of precision and recall
+                - **Weighted**: Metrics averaged weighted by class support
+                """)
+    else:
+        st.warning("⚠️ metrics.json not found. Please ensure models are properly trained.")
+
+# ═════════════════════════════════════════════════════════════
+# PAGE 6 — ABOUT & MODEL
 # ═════════════════════════════════════════════════════════════
 elif page == "ℹ️ About & Model":
     # Hero banner
